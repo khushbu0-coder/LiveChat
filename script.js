@@ -2,6 +2,9 @@ const chatbody = document.querySelector(".chat-body");
 const messageInput = document.querySelector(".message-input");
 const sendMessageButton = document.querySelector("#send-message");
 
+const API_KEY = "use your own key";
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
 const userData = {
     message : null
 }
@@ -12,6 +15,35 @@ const createMessageElement = (content, ...classes) => {
     div.classList.add("message", ...classes);
     div.innerHTML = content;
     return div;
+};
+
+const generateBotResponse = async (incomingMessageDiv) => {
+    const messageElement = incomingMessageDiv.querySelector(".message-text");
+
+    const requestOptions = {
+        method : "POST",
+        headers : {
+            "Content-Type" : "application/json"
+        },
+        body : JSON.stringify({
+            contents : [{
+                parts:[{text: userData.message}]
+                }]
+        })
+    }
+    try{
+        //Fetch bot response from API
+        const response = await fetch(API_URL,requestOptions);
+        const data = await response.json();
+        if(!response.ok) throw new Error(data.error.message);
+
+        //Extract and display bot's response text
+        const apiResponseText = data.candidates[0].content.parts[0].text.trim();
+        messageElement.innerText = apiResponseText;
+
+    }catch(error){
+        console.log(error);
+    }
 };
 
 //Handle outgoing user messages
@@ -45,6 +77,7 @@ const handleOutgoingMessage = (e) => {
 
         const incomingMessageDiv = createMessageElement(messageContent, "bot-message","thinking");
         chatbody.appendChild(incomingMessageDiv);
+        generateBotResponse(incomingMessageDiv);
     },600);
 
 };
